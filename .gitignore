@@ -4,6 +4,6 @@
 docker-compose.yml
 docker-compose.dev.yml
 *.pyc
-versions/
 .github/
 __pycache__
+.env

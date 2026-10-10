@@ -7,7 +7,7 @@ import jwt
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.user import JWT
+from core.config import configs
 from db.user import (
     Session,
     User,
@@ -22,10 +22,10 @@ from dto.static_types import UserActions
 async def issue_jwt_token(user_id: str) -> str:
     return jwt.encode(
         {
-            "exp": datetime.now(timezone.utc) + timedelta(seconds=JWT.EXPIRY),
+            "exp": datetime.now(timezone.utc) + timedelta(seconds=configs.JWT_EXPIRY),
             "session_id": user_id,
         },
-        JWT.SECRET,
+        configs.JWT_SECRET,
     )
 
 async def login_usecase(session: AsyncSession, email: str) -> TokenResponse:

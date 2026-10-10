@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession
 from sqlalchemy.orm import mapped_column, relationship, selectinload
 from sqlalchemy.types import UUID, BigInteger, Boolean, DateTime, Enum, String
 
+from core.config import configs
 from core.exceptions import (
     ONLY_ROOT_CAN_MAKE_ITSELF,
     PASSWORDS_DONT_MATCH,
@@ -23,11 +24,6 @@ from dto.user import UserCreateRequest
 from services.otp import EmailOTPService
 
 EmailOTPService = EmailOTPService()
-
-class JWT:
-    SECRET = "a3f78356482b3b5b7950bd9afed2c245"
-    ALGORITHM = "HS256"
-    EXPIRY = 86400  # seconds (86400)
 
 class User(AsyncAttrs, BaseDBModel):
     __tablename__ = "users"
@@ -95,8 +91,8 @@ async def create_user(s: AsyncSession, r: UserCreateRequest) -> User:
 
     token = jwt.encode(
         {"email": r.email, "exp": datetime.utcnow() + timedelta(hours=1)},
-        JWT.SECRET,
-        algorithm=JWT.ALGORITHM
+        configs.JWT_SECRET,
+        algorithm=configs.JWT_ALGORITHM
     )
 
     confirm_email = await send_otp(r.email, token)
@@ -115,10 +111,9 @@ async def create_user(s: AsyncSession, r: UserCreateRequest) -> User:
 
 async def confirm_email(s: AsyncSession, token: str) -> User:
     try:
-        email = jwt.decode(token, JWT.SECRET, algorithms=[JWT.ALGORITHM])
+        email = jwt.decode(token, configs.JWT_SECRET, algorithms=[configs.JWT_ALGORITHM])
         if not email.get("email"):
             raise USER_NOT_FOUND
-
 
         user = await s.scalar(select(User).where(User.email == email.get("email")))
         user.is_confirmed = True

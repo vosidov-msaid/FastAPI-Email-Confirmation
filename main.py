@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from app import auth, user, application
-from core.config import DBInstance
+from core.config import db_instance
 from db.base import BaseDBModel
 from dto.application import HealthCheck
 from utils.aioclient import HttpClientInstance
@@ -12,12 +12,12 @@ from utils.aioclient import HttpClientInstance
 
 @asynccontextmanager
 async def lifespan(fastapi: FastAPI) -> None:    
-    await DBInstance.init_orm()
-    await DBInstance.create_default_user()
-    await DBInstance.create_default_product()
+    await db_instance.init_orm()
+    await db_instance.create_default_user()
+    await db_instance.create_default_product()
     HttpClientInstance.start()
     yield
-    await DBInstance.teardown_orm()
+    await db_instance.teardown_orm()
     await HttpClientInstance.stop()
     await HttpClientInstance.stop()
 

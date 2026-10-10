@@ -7,8 +7,8 @@ from fastapi import Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from db.user import JWT, Session, get_session_by_id
-from core.config import DBInstance
+from db.user import Session, get_session_by_id
+from core.config import configs, db_instance
 from core.exceptions import NOT_AUTHENTICATED
 from dto.static_types import Role
 from db.user import check_is_confirmed
@@ -22,11 +22,11 @@ class CheckAuth:
 
     async def __call__(self, token: HTTPAuthorizationCredentials = Depends(bearer)) -> Session:
         try:
-            payload = jwt.decode(token.credentials, JWT.SECRET, algorithms=[JWT.ALGORITHM])
+            payload = jwt.decode(token.credentials, configs.JWT_SECRET, algorithms=[configs.JWT_ALGORITHM])
             session_id = payload.get("session_id")
             if session_id is None:
                 raise NOT_AUTHENTICATED
-            async with DBInstance.SESSION_MAKER() as s:
+            async with db_instance.SESSION_MAKER() as s:
                 session = await get_session_by_id(s, session_id)
                 if session.user.role != Role.admin:
                     await check_is_confirmed(s, session.user.email)
@@ -43,7 +43,7 @@ class CheckAuth:
 
 
 async def get_db_session():
-    session = DBInstance.SESSION_MAKER()
+    session = db_instance.SESSION_MAKER()
     try:
         yield session
     except Exception as exc:
